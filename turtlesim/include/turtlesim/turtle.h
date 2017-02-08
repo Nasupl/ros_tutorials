@@ -93,7 +93,7 @@ private:
 
   float meter_;
 
-  const double trans_cov_ = 0.5;
+  const double trans_cov_ = 0.01;
   const double rot_cov_ = PI / 12 * PI / 12;
 
   struct TeleportRequest

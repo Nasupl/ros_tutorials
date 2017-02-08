@@ -75,8 +75,8 @@ double Turtle::noiseGenerator(const double mean, const double cov)
 void Turtle::velocityCallback(const geometry_msgs::Twist::ConstPtr& vel)
 {
   last_command_time_ = ros::WallTime::now();
-  lin_vel_ = vel->linear.x + noiseGenerator(1.0, trans_cov_);
-  ang_vel_ = vel->angular.z + noiseGenerator(1.0, rot_cov_);
+  lin_vel_ = vel->linear.x * noiseGenerator(1.0, trans_cov_);
+  ang_vel_ = vel->angular.z * noiseGenerator(1.0, rot_cov_);
 }
 
 bool Turtle::setPenCallback(turtlesim::SetPen::Request& req, turtlesim::SetPen::Response&)
