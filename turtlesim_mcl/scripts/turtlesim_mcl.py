@@ -36,7 +36,7 @@ class Particle:
 class TurtleMCL:
     def __init__(self):
         rospy.init_node('turtlesim_mcl')
-        rospy.Subscriber('/turtle1/pose', Pose, self.measurement_update,  queue_size=10)
+        rospy.Subscriber('/turtle1/gps', Pose, self.measurement_update,  queue_size=10)
         rospy.Subscriber('/turtle1/cmd_vel', Twist, self.odom_update, queue_size=10)
         rospy.Subscriber('/turtle1/pose', Pose, self.init_pos_cb)
 
@@ -96,12 +96,9 @@ class TurtleMCL:
         return theta, x, y
 
     def odom_update(self, data):
-        rospy.loginfo('odom1'+str(self.is_init))
-
         if not self.is_init:
             return
 
-        rospy.loginfo('odometry updated')
         rospy.loginfo(data)
         diff_theta, diff_x, diff_y = self.calc_odom_diff(data)
         for particle in self.particles:
@@ -116,6 +113,7 @@ class TurtleMCL:
                 normal(1.0, 0.01),
                 particle.x.theta + diff_theta * normal(1.0, 0.05)
             )
+        rospy.loginfo('odometry updated')
 
     def resampling(self):
         self.particles.sort(key=operator.attrgetter('weight'))
@@ -139,7 +137,7 @@ class TurtleMCL:
         for particle in self.particles:
             weight_list.append(particle.weight)
         # rospy.loginfo(str(weight_list))
-        # rospy.loginfo('resampled')
+        rospy.loginfo('resampled')
         return
 
     def measurement_update(self, data):
@@ -162,11 +160,11 @@ class TurtleMCL:
         for particle in self.particles:
             particle.weight = particle.weight * normalize_coe
 
+        rospy.loginfo('measurement updated')
         self.resampling()
 
         for particle in self.particles:
             particle.set_x()
-        # rospy.loginfo('measurement updated')
 
 if __name__ == '__main__':
     mcl = TurtleMCL()
