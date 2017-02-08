@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include <algorithm>
+#include <random>
 #include "turtlesim/turtle.h"
 
 #include <QColor>
@@ -62,12 +63,20 @@ Turtle::Turtle(const ros::NodeHandle& nh, const QImage& turtle_image, const QPoi
   rotateImage();
 }
 
+double Turtle::noiseGenerator(const double mean, const double cov)
+{
+    std::random_device seed_generator;
+    std::default_random_engine engine(seed_generator());
+
+    std::normal_distribution<> dist(mean, cov);
+    return dist(engine);
+}
 
 void Turtle::velocityCallback(const geometry_msgs::Twist::ConstPtr& vel)
 {
   last_command_time_ = ros::WallTime::now();
-  lin_vel_ = vel->linear.x;
-  ang_vel_ = vel->angular.z;
+  lin_vel_ = vel->linear.x + noiseGenerator(1.0, trans_cov_);
+  ang_vel_ = vel->angular.z + noiseGenerator(1.0, rot_cov_);
 }
 
 bool Turtle::setPenCallback(turtlesim::SetPen::Request& req, turtlesim::SetPen::Response&)

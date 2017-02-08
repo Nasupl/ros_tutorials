@@ -62,6 +62,7 @@ public:
   void paint(QPainter &painter);
 private:
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& vel);
+  double noiseGenerator(double mean, double cov);
   bool setPenCallback(turtlesim::SetPen::Request&, turtlesim::SetPen::Response&);
   bool teleportRelativeCallback(turtlesim::TeleportRelative::Request&, turtlesim::TeleportRelative::Response&);
   bool teleportAbsoluteCallback(turtlesim::TeleportAbsolute::Request&, turtlesim::TeleportAbsolute::Response&);
@@ -91,6 +92,9 @@ private:
   ros::WallTime last_command_time_;
 
   float meter_;
+
+  const double trans_cov_ = 0.5;
+  const double rot_cov_ = PI / 12 * PI / 12;
 
   struct TeleportRequest
   {
