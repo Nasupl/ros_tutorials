@@ -1,0 +1,5 @@
+<launch>
+    <node name="turtlesim_node" pkg="turtlesim" type="turtlesim_node" />
+    <node name="mcl" pkg="turtlesim_mcl" type="turtlesim_mcl.py" />
+    <node name="gps" pkg="turtlesim_mcl" type="turtle_gps.py" />
+</launch>
