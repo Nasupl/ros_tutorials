@@ -6,9 +6,7 @@ import math
 import operator
 from numpy.random import *
 from scipy.stats import norm
-from geometry_msgs.msg import Twist
-from std_msgs.msg import *
-from std_srvs.srv import *
+from geometry_msgs.msg import Twist, Vector3
 from turtlesim.srv import *
 from turtlesim.msg import *
 
@@ -40,6 +38,8 @@ class TurtleMCL:
         rospy.Subscriber('/turtle1/cmd_vel', Twist, self.odom_update, queue_size=10)
         rospy.Subscriber('/turtle1/pose', Pose, self.init_pos_cb)
 
+        rospy.Timer(rospy.Duration(0.1), self.check_odom_update)
+
         self.is_init = False
         self.num = 10
         self.init_weight = 1.0 / self.num
@@ -51,6 +51,7 @@ class TurtleMCL:
         self.init_theta = 0.0
         self.init_x = 0.0
         self.init_y = 0.0
+        self.last_received_odom = Twist(Vector3(0,0,0), Vector3(0,0,0))
 
         self.is_first_calc_odom = True
         self.on_update = False
@@ -87,20 +88,28 @@ class TurtleMCL:
         self.is_init = True
         return True
 
-    def calc_odom_diff(self, velocity):
+    def check_odom_update(self):
+        d = rospy.Time.now().to_sec() - self.last_odom_receive_time
+        if d > 1.0:
+            self.dt = 1.0
+            self.odom_update(Twist(, force_update=True)
 
-        theta = math.fmod(velocity.angular.z * self.dt, 2*math.pi)
-        x = math.sin(theta + math.pi/2.0) * velocity.linear.x * self.dt
-        y = math.cos(theta + math.pi/2.0) * velocity.linear.x * self.dt
+    def calc_odom_diff(self, velocity):
+        theta = math.fmod(self.last_received_odom.angular.z * self.dt, 2*math.pi)
+        x = math.sin(theta + math.pi/2.0) * self.last_received_odom.linear.x * self.dt
+        y = math.cos(theta + math.pi/2.0) * self.last_received_odom.linear.x * self.dt
         rospy.loginfo(str(x) + ',' + str(theta))
+        self.last_received_odom = velocity
         return theta, x, y
 
-    def odom_update(self, data):
+    def odom_update(self, data, force_update=False):
         if not self.is_init:
             return
 
-        rospy.loginfo(data)
+        if not force_update:
+            self.dt = self.last_odom_received_time - rospy.Time.now().to_sec()
         diff_theta, diff_x, diff_y = self.calc_odom_diff(data)
+
         for particle in self.particles:
             particle.set_x_hat(
                 particle.x.x +
