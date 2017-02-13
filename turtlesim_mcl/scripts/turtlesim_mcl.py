@@ -52,6 +52,7 @@ class TurtleMCL:
         self.init_x = 0.0
         self.init_y = 0.0
         self.last_received_odom = Twist(Vector3(0,0,0), Vector3(0,0,0))
+        self.last_odom_receive_time = 0.0
 
         self.is_first_calc_odom = True
         self.on_update = False
@@ -88,11 +89,11 @@ class TurtleMCL:
         self.is_init = True
         return True
 
-    def check_odom_update(self):
+    def check_odom_update(self, event):
         d = rospy.Time.now().to_sec() - self.last_odom_receive_time
         if d > 1.0:
             self.dt = 1.0
-            self.odom_update(Twist(, force_update=True)
+            self.odom_update(Twist(Vector3(0,0,0),Vector3(0,0,0)), force_update=True)
 
     def calc_odom_diff(self, velocity):
         theta = math.fmod(self.last_received_odom.angular.z * self.dt, 2*math.pi)
@@ -107,7 +108,9 @@ class TurtleMCL:
             return
 
         if not force_update:
-            self.dt = self.last_odom_received_time - rospy.Time.now().to_sec()
+            self.dt = self.last_odom_receive_time - rospy.Time.now().to_sec()
+        else:
+            rospy.loginfo('forced update')
         diff_theta, diff_x, diff_y = self.calc_odom_diff(data)
 
         for particle in self.particles:
@@ -122,6 +125,7 @@ class TurtleMCL:
                 normal(1.0, 0.01),
                 particle.x.theta + diff_theta * normal(1.0, 0.05)
             )
+        self.last_odom_receive_time = rospy.Time.now().to_sec()
         rospy.loginfo('odometry updated')
 
     def resampling(self):
